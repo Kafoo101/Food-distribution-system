@@ -1,5 +1,4 @@
 <?php
-include 'navbar.php';
     require "connect.php";
     //all sql used
     $companyLocationSQL = "SELECT DISTINCT city FROM company WHERE operating = 1 ORDER BY city ASC";
@@ -242,39 +241,10 @@ include 'navbar.php';
 <html>
 <head>
     <title>Sales Records</title>
-    <style>
-        table { 
-            border-collapse: collapse;
-        }
-        #filter-text{ 
-            padding: 8px 8px 0px 8px; 
-            font-size: 18px; 
-        }
-        th { 
-            background-color: #a4c4a1ff; 
-            text-align: left; 
-            padding: 8px; 
-        }
-        td { 
-            padding: 8px; 
-        }
-        input[type='text'] { 
-            width: 100%; 
-            box-sizing: border-box; 
-        }
-        .hidden-row {
-            display: none;
-        }
-        .add-btn {
-            font-size: 18px;
-            width: 26px;
-            height: 26px;
-            cursor: pointer;
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
+<?php include 'navbar.php'; ?>
 <h2>Sales Records</h2>
 
 <!-- Filter Form -->
@@ -286,7 +256,7 @@ include 'navbar.php';
             <td id="filter-text" width="150px">Time Period:</td>
             <td id="filter-text" width="120px">Item Name:</td>
             <td id="filter-text" colspan="2"></td>
-            <td id="filter-text" width="240px">Company Location:</td>
+            <td id="filter-text" width="260px">Company Location:</td>
         </tr>
          <tr>
             <?php
@@ -380,10 +350,13 @@ include 'navbar.php';
                     
                     foreach ($row as $index => $cell) {
                         $style = ($index === 3 || $index === 4) ? " text-align:center;" : "";
+                        $cell = htmlspecialchars($cell);
+
                         if ($index === 4) {
-                            $cell = htmlspecialchars($cell) . " \$NTD";
-                        } else {
-                            $cell = htmlspecialchars($cell);
+                            $cell .= " \$NTD";
+                        }
+                        if ($index === 5 && mb_strlen($cell) > 30) {
+                            $cell = mb_substr($cell, 0, 30) . "...";
                         }
 
                         echo "<td style='background-color: $bgColor; $style'>$cell</td>";

@@ -7,12 +7,9 @@ include 'navbar.php';
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Home</title>
+  <link rel="stylesheet" href="style.css">
   <style>
-    html,body{height:100%;margin:0;font-family:Arial,Helvetica,sans-serif}
-    .center-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;}
-    .center-content{display:flex;flex-direction:column;align-items:center;}
-    .logo{width:360px;height:360px}
-    .logo svg{width:100%;height:100%;display:block}
+    html,body{height:100%;margin:0;}
   </style>
 </head>
 <body>
