@@ -1,4 +1,5 @@
 <?php
+include 'navbar.php';
     require "connect.php";
     //all sql used
     $companyLocationSQL = "SELECT DISTINCT city FROM company WHERE operating = 1 ORDER BY city ASC";
