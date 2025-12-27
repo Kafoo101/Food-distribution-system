@@ -35,7 +35,8 @@ $mode = $_GET['mode'] ?? '';
         elseif (isset($_SESSION['email'])) {
             $name_display = htmlspecialchars($_SESSION['name']);
             echo "<span class='nav-user'>$name_display</span> ";
-            echo '<a href="login.php?mode=logout" class="nav-btn login-btn">Logout</a>';
+            // Added confirmation on logout
+            echo '<a href="login.php?mode=logout" class="nav-btn login-btn" onclick="return confirm(\'Are you sure you want to logout?\');">Logout</a>';
         }
         // Default: login link for other pages if not logged in
         else {
