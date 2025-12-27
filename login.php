@@ -77,36 +77,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <html>
 <head>
     <title>Authentication</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=999">
     <style>
         body { font-family: Arial, sans-serif; background-color: #f9f9f9; margin:0; padding:0; }
         .main-content { display:flex; justify-content:center; align-items:center; min-height:calc(100vh - 60px); padding-top:20px; }
-        .login-container { width:400px; padding:20px; background:white; border:1px solid #ccc; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
-        .login-container h1 { text-align:center; margin-bottom:20px; color: darkgreen; }
-        .login-container table { width:100%; border-collapse:collapse; }
-        .login-container td { padding:8px; vertical-align: middle; }
-        .login-container input[type="text"], .login-container input[type="email"], .login-container input[type="password"] {
-            width:100%; padding:6px 30px 6px 6px; margin:0; border:1px solid #ccc; border-radius:4px; box-sizing:border-box; outline:none; font-family:inherit; font-size:14px;
-        }
-        .login-container input[type="text"]:focus, .login-container input[type="email"]:focus, .login-container input[type="password"]:focus {
-            border-color:#4CAF50; box-shadow:0 0 3px #4CAF50;
-        }
-        .login-container input[type="submit"] { width:100%; padding:8px; background:#4CAF50; color:white; border:none; border-radius:4px; cursor:pointer; }
-        .login-container input[type="submit"]:hover { background:#45a049; }
-        .error { color:red; margin-bottom:10px; text-align:center; }
-        .success { color:green; margin-bottom:10px; text-align:center; }
-        .switch-mode { text-align:center; margin-top:10px; }
-        .switch-mode a { text-decoration:none; color:#4CAF50; }
-
-        .password-container { position: relative; width: 100%; }
-        .password-container i {
-            position: absolute;
-            right: 8px;
-            top: 50%;
-            transform: translateY(-50%);
-            cursor: pointer;
-            color: #888;
-        }
     </style>
 </head>
 <body>
