@@ -1,5 +1,19 @@
 <?php
 require "connect.php";
+include "navbar.php";
+
+// Check if session exists
+if (!isset($_SESSION['email'])) {
+    echo "<script>
+            let proceed = confirm('You are not logged in. Click OK to go to Login, or Cancel to go back to Item page.');
+            if (proceed) {
+                window.location.href='login.php?mode=login';
+            } else {
+                window.location.href='item.php';
+            }
+          </script>";
+    exit();
+}
 
 // Check for item id
 if (!isset($_GET['id'])) {
@@ -15,18 +29,22 @@ $error = "";
 $success = "";
 
 /* Load item */
-$stmt = $conn->prepare("SELECT item_name, stock FROM items WHERE item_id=?");
+$stmt = $conn->prepare("SELECT item_name, stock FROM items WHERE item_id = ?");
 $stmt->bind_param("s", $item_id);
-$stmt->execute();
-$stmt->store_result();
 
-if ($stmt->num_rows === 0) {
-    header("Location: item.php");
-    exit();
+if ($stmt->execute()) {
+    $stmt->bind_result($item_name, $stock);
+    if (!$stmt->fetch()) {
+        $stmt->close();
+        echo "<script>
+                alert('Item not found.');
+                window.location.href='item.php';
+              </script>";
+        exit();
+    }
+} else {
+    $error = "Failed to fetch item.";
 }
-
-$stmt->bind_result($item_name, $stock);
-$stmt->fetch();
 $stmt->close();
 
 /* Update item */
@@ -39,14 +57,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (!is_numeric($newStock) || $newStock < 0) {
         $error = "Stock must be 0 or greater.";
     } else {
-        $stmt = $conn->prepare("UPDATE items SET item_name=?, stock=? WHERE item_id=?");
+        $stmt = $conn->prepare("UPDATE items SET item_name = ?, stock = ? WHERE item_id = ?");
         $stmt->bind_param("sis", $newName, $newStock, $item_id);
 
         if ($stmt->execute()) {
-            $item_name = $newName;
-            $stock = $newStock;
-
-            //alert then redirect
+            $stmt->close();
             echo "<script>
                     alert('Item updated successfully!');
                     window.location.href='item.php';
@@ -54,8 +69,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit();
         } else {
             $error = "Update failed.";
+            $stmt->close();
         }
-        $stmt->close();
     }
 }
 ?>
@@ -67,32 +82,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="style.css?v=999">
 </head>
 <body>
-
-<?php include 'navbar.php'; 
-
-// Check if session exists
-if (!isset($_SESSION['email'])) {
-    echo "<script>
-            let proceed = confirm('You are not logged in. Click OK to go to Login, or Cancel to go back to Item page.');
-            if (proceed) {
-                window.location.href='login.php?mode=login';
-            } else {
-                window.location.href='item.php';
-            }
-          </script>";
-    exit();
-}
-?>
-
-<script>
-    function stepStock(delta) {
-        const input = document.getElementById("stock");
-        let val = parseInt(input.value) || 0;
-        val += delta;
-        if (val < 0) val = 0;
-        input.value = val;
-    }
-</script>
 
 <div class="edit-box">
     <h2>Edit Item</h2>
@@ -122,6 +111,16 @@ if (!isset($_SESSION['email'])) {
         </div>
     </form>
 </div>
+
+<script>
+function stepStock(delta) {
+    const input = document.getElementById("stock");
+    let val = parseInt(input.value) || 0;
+    val += delta;
+    if (val < 0) val = 0;
+    input.value = val;
+}
+</script>
 
 </body>
 </html>
