@@ -127,7 +127,7 @@ function getNextId($conn, $companyIdSQL)
         <tr>
             <td id="filter-text" width="100px">Filter By:</td>
             <td id="filter-text" width="120px">Company ID:</td>
-            <td id="filter-text" width="140px">Company Name:</td>
+            <td id="filter-text" width="260px">Company Name:</td>
             <td id="filter-text" colspan="1"></td>
             <td></td>
         </tr>
@@ -201,7 +201,10 @@ function getNextId($conn, $companyIdSQL)
 
                 echo "<tr>";
                 echo "<td style='background-color: white;'></td>";
-                foreach ($row as $cell) {
+                foreach ($row as $index => $cell) {
+                    if (($index === 1 || $index === 3)  && mb_strlen($cell) > 30) {
+                        $cell = mb_substr($cell, 0, 30) . "...";
+                    }
                     echo "<td style='background-color: $bgColor;'>$cell</td>";
                 }
 
