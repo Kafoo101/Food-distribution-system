@@ -200,10 +200,6 @@ function autofillField($conn, $likeSQL, $inputValue) {
 <head>
     <title>Edit Sale</title>
     <link rel="stylesheet" href="style.css?v=999">
-    <style>
-        .warning { color: red; font-size: 0.9em; margin-top: 2px; }
-        .msg-error { color: red; margin-bottom: 10px; }
-    </style>
 </head>
 <body>
 <div class="edit-box">
