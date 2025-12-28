@@ -17,9 +17,12 @@ $mode = $_GET['mode'] ?? '';
 <nav class="navbar">
   <div class="navbar-left">
     <a href="index.php" class="nav-btn">Home</a>
-    <a href="purchase.php" class="nav-btn">Purchase</a>
-    <a href="sell.php" class="nav-btn">Sell</a>
-    <a href="item.php" class="nav-btn">Stock</a>
+
+    <?php if (isset($_SESSION['email'])): ?>
+        <a href="purchase.php" class="nav-btn">Purchase</a>
+        <a href="sell.php" class="nav-btn">Sell</a>
+        <a href="item.php" class="nav-btn">Stock</a>
+    <?php endif; ?>
   </div>
   <div class="navbar-right">
     <?php
