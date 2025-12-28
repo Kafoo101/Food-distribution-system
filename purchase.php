@@ -1,7 +1,7 @@
 <?php
     require "connect.php";
     //all sql used
-    $companyLocationSQL = "SELECT DISTINCT city FROM company WHERE operating = 1 ORDER BY city ASC";
+    $companyLocationSQL = "CALL getPurchaseCitiesByCompanyIds()";
     $companyIdCitySQL = "SELECT * FROM company WHERE city LIKE ? AND operating = 1";
     $companyIdFixedSQL = "SELECT company_id FROM company WHERE company_name = ? AND operating = 1";
     $companyNameSQL = "SELECT company_name FROM company WHERE company_name LIKE ? AND operating = 1 LIMIT 1";
@@ -12,6 +12,7 @@
     $tableRefreshSQL = "SELECT p.purchase_id, p.timestamp, i.item_name, p.quantity, p.purchase_price, c.company_name FROM purchase p JOIN items i ON p.item_id = i.item_id JOIN company c ON p.company_id = c.company_id WHERE p.purchase_id LIKE ? AND p.timestamp LIKE ? AND i.item_name LIKE ? AND c.city LIKE ? AND c.operating = 1 ORDER BY p.purchase_id DESC";
     $purchaseInsertSQL = "INSERT INTO purchase(purchase_id, item_id, quantity, purchase_price, company_id, timestamp) VALUES (?,?,?,?,?,NOW())";
     $itemUpdateSQL = "UPDATE items SET stock = stock + ? WHERE item_id = ?";
+    $totalPriceSQL = "SELECT SUM(itemTotalPrice(p.quantity, p.purchase_price)) FROM purchase p JOIN company c ON p.company_id = c.company_id JOIN items i ON p.item_id = i.item_id WHERE p.purchase_id LIKE ? AND p.timestamp LIKE ? AND i.item_name LIKE ? AND c.city LIKE ?";
     
     //page special actions
     if (isset($_GET['toggleAdd'])) {
@@ -122,7 +123,7 @@
         return [$locations, $months];
     }
 
-    function refreshTable($conn, $purchaseId, $timePeriod, $itemName, $location, $purchaseFilterSQL)
+    function refreshTable($conn, $purchaseId, $timePeriod, $itemName, $location, $purchaseFilterSQL, $totalPriceSQL)
     {
         $stmt = $conn->prepare($purchaseFilterSQL);
 
@@ -140,8 +141,17 @@
         while ($stmt->fetch()) {
             $purchases[] = [ $purchase_id, $timestamp, $item_name, $quantity, $purchase_price, $company_name ];
         }
+        $stmt->close();
 
-        return $purchases;
+        // --- Calculate total expenditure using SQL function and SUM() ---
+        $stmt2 = $conn->prepare($totalPriceSQL);
+        $stmt2->bind_param("ssss", $likePurchaseId, $likeTime, $likeItemName, $likeLocation);
+        $stmt2->execute();
+        $stmt2->bind_result($totalExpenditure);
+        $stmt2->fetch();
+        $stmt2->close();
+
+        return ['purchases' => $purchases, 'totalExpenditure' => $totalExpenditure];
     }
 
     function getNextId($conn, $purchaseIdSQL)
@@ -308,7 +318,9 @@
             <th>Company Name</th>
         </tr>
         <?php
-            $purchases = refreshTable($conn, $_GET['purchaseFilter'] ?? '', $_GET['timeFilter'] ?? '', $_GET['itemFilter'] ?? '', $_GET['locationFilter'] ?? '', $tableRefreshSQL);
+            $result = refreshTable($conn, $_GET['purchaseFilter'] ?? '', $_GET['timeFilter'] ?? '', $_GET['itemFilter'] ?? '', $_GET['locationFilter'] ?? '', $tableRefreshSQL, $totalPriceSQL);
+            $purchases = $result['purchases'];
+            $totalExpenditure = $result['totalExpenditure'];
             $color1 = "#F5F5F5";
             $color2 = "#def2e8ff";
 
@@ -345,6 +357,10 @@
                     echo "</tr>";
                     $rowIndex++;
                 }
+                echo "<tr>
+                    <td colspan='5' style='text-align:right; font-weight:bold;'>Total Expenditure :</td>
+                    <td style='text-align:center; font-weight:bold; background-color: $color2'>" . $totalExpenditure . " \$NTD</td>
+                </tr>";
             } else {
                 echo "<tr><td colspan='6' style='text-align:center;'>No matching records found</td></tr>";
             }

@@ -1,17 +1,40 @@
 <?php
     require "connect.php";
+    mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
     //all sql used
-    $itemNameFixedSQL = "SELECT item_name FROM items WHERE item_name = ? AND onsale = 1";
-    $itemNameSQL = "SELECT item_name FROM items WHERE item_name LIKE ? AND onsale = 1 LIMIT 1";
+    $itemRemoveSQL = "UPDATE items SET onsale = 0 WHERE item_id = ?";
+    $itemDeleteSQL = "DELETE FROM items WHERE item_id = ?";
     $itemIdSQL = "SELECT item_id FROM items WHERE onsale = 1 ORDER BY item_id DESC LIMIT 1";
     $itemFilterSQL = "SELECT * FROM items WHERE item_id LIKE ? AND item_name LIKE ? AND onsale = 1";
-    $itemInsertSQL = "INSERT INTO items(item_id, item_name, stock, onsale) VALUES(?, ?, ?, ?)";
+    $itemInsertSQL = "INSERT INTO items(item_id, item_name, stock, onsale) VALUES(?, ?, ?, 1)";
     
     //page special actions
     if (isset($_GET['toggleAdd'])) {
         $showAddRow = $_GET['toggleAdd'] === '1';
     } else {
         $showAddRow = isset($_GET['showAdd']) && $_GET['showAdd'] === '1';
+    }
+
+    if (isset($_GET['action']) && isset($_GET['id'])) {
+        $itemIdAction = $_GET['id'];
+
+        if ($_GET['action'] === 'remove') {
+            $stmt = $conn->prepare($itemRemoveSQL);
+            $stmt->bind_param("s", $itemIdAction);
+            $stmt->execute();
+        } elseif ($_GET['action'] === 'delete') {
+            $stmt = $conn->prepare($itemDeleteSQL);
+            $stmt->bind_param("s", $itemIdAction);
+            $stmt->execute();
+        }
+
+        // Remove action & id from query to prevent repeated execution
+        $redirectQuery = $_GET;
+        unset($redirectQuery['action'], $redirectQuery['id']);
+        $redirectQueryString = http_build_query($redirectQuery);
+
+        header("Location: item.php?" . $redirectQueryString);
+        exit;
     }
 
     if (isset($_GET['addAction']) && $_GET['addAction'] === '1') {
@@ -27,13 +50,17 @@
         if (empty($errors)) {
             //insert items
             $stmt = $conn->prepare($itemInsertSQL);
-            $stmt->bind_param("ssii", $itemId, $itemName, $stock, 1);
-            $stmt->execute();
+            try {
+                $stmt->bind_param("ssi", $itemId, $itemName, $stock);
+                $stmt->execute();
 
-            // reset value
-            $_GET['newItemId'] = '';
-            $_GET['newItemName'] = '';
-            $_GET['newStock'] = '';
+                // reset value
+                $_GET['newItemId'] = '';
+                $_GET['newItemName'] = '';
+                $_GET['newStock'] = '';
+            } catch (mysqli_sql_exception $e) {
+                $errors[] = $e->getMessage();
+            }
         }
     }
     
@@ -167,14 +194,43 @@
                     $itemId = $row[0];
 
                     echo "<tr><td style='background-color: \"white\"'></td>";
-                    
-                    foreach ($row as $index => $cell) {
+
+                    // Output item columns
+                    foreach ($row as $cell) {
                         echo "<td style='background-color: $bgColor;'>$cell</td>";
                     }
-                    echo "
-                        <td><a href='itemEdit.php?id=$itemId'>edit</a></td>
-                    ";
+
+                    // Preserve current GET parameters
+                    $currentQuery = $_GET;
+                    if (isset($currentQuery['addAction'])) {
+                        unset($currentQuery['addAction']);
+                    }
+
+                    echo "<td>";
+
+                    // Edit link
+                    $editQuery = $currentQuery;
+                    $editQuery['id'] = $itemId;
+                    $editQueryString = http_build_query($editQuery);
+                    echo "<a href='itemEdit.php?$editQueryString'>edit</a> | ";
+
+                    // Remove link
+                    $removeQuery = $currentQuery;
+                    $removeQuery['action'] = 'remove';
+                    $removeQuery['id'] = $itemId;
+                    $removeQueryString = http_build_query($removeQuery);
+                    echo "<a href='?" . htmlspecialchars($removeQueryString) . "'>remove</a> | ";
+
+                    // Delete link with confirmation
+                    $deleteQuery = $currentQuery;
+                    $deleteQuery['action'] = 'delete';
+                    $deleteQuery['id'] = $itemId;
+                    $deleteQueryString = http_build_query($deleteQuery);
+                    echo "<a href='?" . htmlspecialchars($deleteQueryString) . "' onclick=\"return confirm('Are you sure you want to delete this item?');\">delete</a>";
+
+                    echo "</td>";
                     echo "</tr>";
+
                     $rowIndex++;
                 }
             } else {

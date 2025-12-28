@@ -1,7 +1,7 @@
 <?php
     require "connect.php";
     //all sql used
-    $companyLocationSQL = "SELECT DISTINCT city FROM company WHERE operating = 1 ORDER BY city ASC";
+    $companyLocationSQL = "CALL getSalesCitiesByCompanyIds()";
     $companyIdCitySQL = "SELECT * FROM company WHERE city LIKE ? AND operating = 1";
     $companyIdFixedSQL = "SELECT company_id FROM company WHERE company_name = ? AND operating = 1";
     $companyNameSQL = "SELECT company_name FROM company WHERE company_name LIKE ? AND operating = 1 LIMIT 1";
@@ -13,6 +13,7 @@
     $salesInsertSQL = "INSERT INTO sales(sales_id, item_id, quantity, sales_price, company_id, timestamp) VALUES (?,?,?,?,?,NOW())";
     $itemUpdateSQL = "UPDATE items SET stock = stock - ? WHERE item_id = ?";
     $saleItemStockSQL = "SELECT stock FROM items WHERE item_id = ? AND onsale = 1";
+    $totalPriceSQL = "SELECT SUM(itemTotalPrice(s.quantity, s.sales_price)) FROM sales s JOIN company c ON s.company_id = c.company_id JOIN items i ON s.item_id = i.item_id WHERE s.sales_id LIKE ? AND s.timestamp LIKE ? AND i.item_name LIKE ? AND c.city LIKE ?";
     
     //page special actions
     if (isset($_GET['toggleAdd'])) {
@@ -144,7 +145,7 @@
         return [$locations, $months];
     }
 
-    function refreshTable($conn, $salesId, $timePeriod, $itemName, $location, $salesFilterSQL)
+    function refreshTable($conn, $salesId, $timePeriod, $itemName, $location, $salesFilterSQL, $totalPriceSQL)
     {
         $stmt = $conn->prepare($salesFilterSQL);
 
@@ -162,8 +163,17 @@
         while ($stmt->fetch()) {
             $sales[] = [ $sales_id, $timestamp, $item_name, $quantity, $sales_price, $company_name ];
         }
+        $stmt->close();
 
-        return $sales;
+        // --- Calculate total expenditure using SQL function and SUM() ---
+        $stmt2 = $conn->prepare($totalPriceSQL);
+        $stmt2->bind_param("ssss", $likeSalesId, $likeTime, $likeItemName, $likeLocation);
+        $stmt2->execute();
+        $stmt2->bind_result($totalIncome);
+        $stmt2->fetch();
+        $stmt2->close();
+
+        return ['sales' => $sales, 'totalIncome' => $totalIncome];
     }
 
     function getNextId($conn, $salesIdSQL)
@@ -330,7 +340,9 @@
             <th>Company Name</th>
         </tr>
         <?php
-            $sales = refreshTable($conn, $_GET['salesFilter'] ?? '', $_GET['timeFilter'] ?? '', $_GET['itemFilter'] ?? '', $_GET['locationFilter'] ?? '', $tableRefreshSQL);
+            $result = refreshTable($conn, $_GET['salesFilter'] ?? '', $_GET['timeFilter'] ?? '', $_GET['itemFilter'] ?? '', $_GET['locationFilter'] ?? '', $tableRefreshSQL, $totalPriceSQL);
+            $sales = $result['sales'];
+            $totalIncome = $result['totalIncome'];
             $color1 = "#F5F5F5";
             $color2 = "#def2e8ff";
 
@@ -367,6 +379,10 @@
                     echo "</tr>";
                     $rowIndex++;
                 }
+                echo "<tr>
+                    <td colspan='5' style='text-align:right; font-weight:bold;'>Total Income :</td>
+                    <td style='text-align:center; font-weight:bold; background-color: $color2'>" . $totalIncome . " \$NTD</td>
+                </tr>";
             } else {
                 echo "<tr><td colspan='6' style='text-align:center;'>No matching records found</td></tr>";
             }
