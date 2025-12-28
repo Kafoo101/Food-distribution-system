@@ -7,14 +7,17 @@ $companyFilterSQL = "SELECT company_id, company_name, city, address, phone
                      WHERE company_id LIKE ? AND company_name LIKE ? AND operating = 1";
 $companyInsertSQL = "INSERT INTO company(company_id, company_name, city, address, phone, operating) VALUES(?, ?, ?, ?, ?, ?)";
 $companyIdSQL     = "SELECT company_id FROM company ORDER BY company_id DESC LIMIT 1";
+$companyRemoveSQL = "UPDATE company SET operating = 0 WHERE company_id = ?";
+$companyDeleteSQL = "DELETE FROM company WHERE company_id = ?";
 
-// Page actions
+// Page actions: toggle add row
 if (isset($_GET['toggleAdd'])) {
     $showAddRow = $_GET['toggleAdd'] === '1';
 } else {
     $showAddRow = isset($_GET['showAdd']) && $_GET['showAdd'] === '1';
 }
 
+// Handle add company
 if (isset($_GET['addAction']) && $_GET['addAction'] === '1') {
     $showAddRow = true; 
     $companyId   = $_GET['newCompanyId'] ?? '';
@@ -31,7 +34,7 @@ if (isset($_GET['addAction']) && $_GET['addAction'] === '1') {
 
     if (empty($errors)) {
         $stmt = $conn->prepare($companyInsertSQL);
-        $operating = 1; // still insert with operating = 1
+        $operating = 1; // insert with operating = 1
         $stmt->bind_param("sssssi", $companyId, $companyName, $city, $address, $phone, $operating);
         $stmt->execute();
 
@@ -43,6 +46,27 @@ if (isset($_GET['addAction']) && $_GET['addAction'] === '1') {
     }
 }
 
+// Handle remove/delete actions
+if (isset($_GET['action']) && isset($_GET['id'])) {
+    $companyIdAction = $_GET['id'];
+
+    if ($_GET['action'] === 'remove') {
+        $stmt = $conn->prepare($companyRemoveSQL);
+        $stmt->bind_param("s", $companyIdAction);
+        $stmt->execute();
+    } elseif ($_GET['action'] === 'delete') {
+        $stmt = $conn->prepare($companyDeleteSQL);
+        $stmt->bind_param("s", $companyIdAction);
+        $stmt->execute();
+    }
+
+    // Prevent repeated execution
+    $redirectQuery = $_GET;
+    unset($redirectQuery['action'], $redirectQuery['id']);
+    header("Location: company.php?" . http_build_query($redirectQuery));
+    exit;
+}
+
 // HTML values
 $currentPage = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
 $nextCompanyId = getNextId($conn, $companyIdSQL);
@@ -52,6 +76,7 @@ $newCity        = $_GET['newCity'] ?? '';
 $newAddress     = $_GET['newAddress'] ?? '';
 $newPhone       = $_GET['newPhone'] ?? '';
 
+// Functions
 function refreshTable($conn, $companyIdFilter, $companyNameFilter, $companyFilterSQL)
 {
     $stmt = $conn->prepare($companyFilterSQL);
@@ -85,9 +110,6 @@ function getNextId($conn, $companyIdSQL)
     return 'C-' . str_pad($number, 4, '0', STR_PAD_LEFT);
 }
 
-if (!empty($errors)) {
-    echo '<div style="color:red;">' . implode('<br>', $errors) . '</div>';
-}
 ?>
 
 <!DOCTYPE html>
@@ -103,9 +125,10 @@ if (!empty($errors)) {
 <form method='GET'>
     <table>
         <tr>
-            <td width="100px">Filter By:</td>
-            <td width="120px">Company ID:</td>
-            <td width="120px">Company Name:</td>
+            <td id="filter-text" width="100px">Filter By:</td>
+            <td id="filter-text" width="120px">Company ID:</td>
+            <td id="filter-text" width="140px">Company Name:</td>
+            <td id="filter-text" colspan="1"></td>
             <td></td>
         </tr>
         <tr>
@@ -181,7 +204,26 @@ if (!empty($errors)) {
                 foreach ($row as $cell) {
                     echo "<td style='background-color: $bgColor;'>$cell</td>";
                 }
-                echo "<td><a href='companyEdit.php?id=$companyId'>edit</a></td>";
+
+                // Actions: Edit / Remove / Delete
+                $currentQuery = $_GET;
+
+                echo "<td>";
+                $editQuery = $currentQuery;
+                $editQuery['id'] = $companyId;
+                echo "<a href='companyEdit.php?" . htmlspecialchars(http_build_query($editQuery)) . "'>edit</a> | ";
+
+                $removeQuery = $currentQuery;
+                $removeQuery['action'] = 'remove';
+                $removeQuery['id'] = $companyId;
+                echo "<a href='?" . htmlspecialchars(http_build_query($removeQuery)) . "'>remove</a> | ";
+
+                $deleteQuery = $currentQuery;
+                $deleteQuery['action'] = 'delete';
+                $deleteQuery['id'] = $companyId;
+                echo "<a href='?" . htmlspecialchars(http_build_query($deleteQuery)) . "'>delete</a>";
+
+                echo "</td>";
                 echo "</tr>";
                 $rowIndex++;
             }
