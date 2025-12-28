@@ -283,3 +283,8 @@ body {
 .button-group .cancel-btn:hover {
     background-color: #c10000;
 }
+
+/*warns*/
+.warning { color: red; font-size: 0.9em; margin-top: 2px; }
+.msg-success { color: green; margin-bottom: 10px; }
+.msg-error { color: red; margin-bottom: 10px; }

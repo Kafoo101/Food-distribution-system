@@ -22,6 +22,7 @@ $mode = $_GET['mode'] ?? '';
         <a href="purchase.php" class="nav-btn">Purchase</a>
         <a href="sell.php" class="nav-btn">Sell</a>
         <a href="item.php" class="nav-btn">Stock</a>
+        <a href="company.php" class="nav-btn">Company</a>
     <?php endif; ?>
   </div>
   <div class="navbar-right">
