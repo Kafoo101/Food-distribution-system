@@ -1,6 +1,5 @@
 <?php
 require "connect.php";
-session_start();
 
 $mode = $_GET['mode'] ?? 'login';
 $error = '';
@@ -27,6 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // Verify password against the hash
             if (password_verify($password, $db_password_hash)) {
+                session_start();
                 $_SESSION['email'] = $db_email;
                 $_SESSION['name'] = $db_name;
                 header("Location: index.php");
