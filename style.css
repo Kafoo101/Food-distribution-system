@@ -14,10 +14,12 @@
   box-shadow: 0 2px 4px rgba(0,0,0,0.03);
   position: fixed;
   z-index: 10;
+  flex-wrap: wrap;
 }
 .navbar-left, .navbar-right {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
 }
 .nav-btn {
   display: inline-block;
@@ -29,6 +31,7 @@
   margin-right: 6px;
   transition: background 0.2s, color 0.2s;
   font-weight: bold;
+  white-space: nowrap;
 }
 .nav-btn:last-child {
   margin-right: 0;
@@ -36,6 +39,22 @@
 .nav-btn:hover, .nav-btn:focus {
   background: #8bb07d;
   color: #111;
+}
+@media (max-width: 768px) {
+    .navbar {
+        flex-direction: column; /* stack left and right sections */
+        height: auto;
+        padding: 8px;
+    }
+    .navbar-left, .navbar-right {
+        justify-content: center;
+        margin: 4px 0;
+    }
+    .nav-btn {
+        padding: 6px 10px;
+        font-size: 1rem;
+        margin: 4px;
+    }
 }
 .login-btn {
   margin-left: 12px;
